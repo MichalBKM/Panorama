@@ -6,13 +6,42 @@ from scipy.ndimage import map_coordinates
 
 from utils import *
 
+# DONE - This function works correctly
 def harris_corner_detector(im):
     """
     Implements the harris corner detection algorithm.
     :param im: A 2D array representing a grayscale image.
     :return: An array with shape (N,2), where its ith entry is the [x,y] coordinates of the ith corner point.
     """
-    pass
+    # 1. Get the Ix and Iy image derivatives using the filters [-1 0 1] and its transpose.
+    dx_filter = np.array([[-1, 0, 1]])
+    dy_filter = dx_filter.T
+    ix = convolve2d(im, dx_filter, mode='same', boundary='symm')
+    iy = convolve2d(im, dy_filter, mode='same', boundary='symm')
+
+    # 2. Blur the images: Ix^2, Iy^2, IxIy using blur_spatial with kernel_size=3.
+    ix2 = ix * ix
+    iy2 = iy * iy
+    ixiy = ix * iy
+    ix2_blurred = blur_spatial(ix2, kernel_size=3)
+    iy2_blurred = blur_spatial(iy2, kernel_size=3)
+    ixiy_blurred = blur_spatial(ixiy, kernel_size=3)
+
+    # 3. This will yield the matrix M and we use the response function R = det(M) - alpha(trace(M))^2, with alpha=0.04,
+    #    to measure how big the two eigenvalues of M are.
+    #    M = [[ix2, ixiy], [ixiy, iy2]]
+    det_M = (ix2_blurred * iy2_blurred) - (ixiy_blurred ** 2)
+    trace_M = ix2_blurred + iy2_blurred
+    alpha = 0.04
+    R = det_M - alpha * (trace_M ** 2)
+
+    # 4. Perform non-maximum suppression on R.
+    nms_result = non_maximum_suppression(R)
+
+    # 5. Return the (x,y) coordinates of the detected corners.
+    corners = np.argwhere(nms_result)
+    return corners[:, ::-1]  # Switch from (row, col) to (x, y)
+
 
 def feature_descriptor(im, points, desc_rad=3):
     """
@@ -233,7 +262,7 @@ def generate_panoramic_images(data_dir, file_prefix, num_images, out_dir, number
     for i, panorama in enumerate(panoramas):
         plt.imsave('%s/panorama%02d.png' % (out_dir, i + 1), panorama)
 
-
+"""
 if __name__ == "__main__":
     import ffmpeg
     video_name = "mt_cook.mp4"
@@ -278,3 +307,11 @@ if __name__ == "__main__":
     print("\nGenerating panoramic images...")
     generate_panoramic_images(f"dump/{video_name_base}/", video_name_base,
                               num_images=num_images, out_dir=f"out/{video_name_base}", number_of_panoramas=3)
+"""
+
+
+if __name__ == '__main__':
+    im = read_image("photos/chess.jpg", 1) 
+    points = harris_corner_detector(im)
+    visualize_points(im, points)
+    plt.show()
