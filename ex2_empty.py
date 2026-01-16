@@ -8,13 +8,17 @@ from utils import *
 
 #########################################################
 # TODO: Implement the following functions               #
+#                                                       #
+# PART 1: REGISTRATION                                  #
 # 1. harris_corner_detector - DONE, Michal              #
 # 2. feature_descriptor - DONE, Michal                  #
 # 3. find_features                                      #
 # 4. match_features                                     #
 # 5. apply_homography                                   #
 # 6. ransac_homography                                  #
-# 7. display_matches                                    #
+# 7. display_matches                                    #         
+#                                                       #
+# PART 2: STITCHING                                     #
 # 8. accumulate_homographies                            #
 # 9. compute_bounding_box                               #
 # 10. warp_channel                                      #
