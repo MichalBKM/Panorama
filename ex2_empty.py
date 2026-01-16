@@ -43,6 +43,7 @@ def harris_corner_detector(im):
     return corners[:, ::-1]  # Switch from (row, col) to (x, y)
 
 
+# DONE - This function works correctly
 def feature_descriptor(im, points, desc_rad=3):
     """
     Samples descriptors at the given feature points.
@@ -51,7 +52,31 @@ def feature_descriptor(im, points, desc_rad=3):
     :param desc_rad: "Radius" of descriptors to compute.
     :return: An array of 2D patches, each patch i representing the descriptor of point i.
     """
-    pass
+    patch_size = 2 * desc_rad + 1
+    patches = []
+
+    for point in points:
+        # (x,y) image coordinates
+        x, y = point
+
+        # Create grid 
+        x_pixels = np.arange(x - desc_rad, x + desc_rad + 1)
+        y_pixels = np.arange(y - desc_rad, y + desc_rad + 1)
+        x_grid, y_grid = np.meshgrid(x_pixels, y_pixels)
+
+        # map_coordinates expects (row, col) = (y, x)
+        coords = np.vstack((y_grid.ravel(), x_grid.ravel()))
+
+        # Sample patch + reshape back into 2D
+        patch = map_coordinates(im, coords, order=1, mode='reflect').reshape((patch_size, patch_size))
+
+        # Normalize patch
+        patch = normalize(patch)
+        
+        # add to list
+        patches.append(patch)
+
+    return np.array(patches)
 
 def find_features(im):
     """
@@ -309,9 +334,40 @@ if __name__ == "__main__":
                               num_images=num_images, out_dir=f"out/{video_name_base}", number_of_panoramas=3)
 """
 
+# Check harris corner detector and feature descriptor
+def main():
+    # ---- Load grayscale image ----
+    im = read_image('photos/color.jpg', GRAY_REPRESENTATION)
 
-if __name__ == '__main__':
-    im = read_image("photos/chess.jpg", 1) 
-    points = harris_corner_detector(im)
-    visualize_points(im, points)
+    # ---- Detect corners ----
+    corners = spread_out_corners(
+        im,
+        m=4,
+        n=4,
+        radius=8,
+        harris_corner_detector=harris_corner_detector
+    )
+
+    print(f"Detected {len(corners)} corners")
+
+    # ---- Compute descriptors ----
+    desc_rad = 3
+    descriptors = feature_descriptor(im, corners, desc_rad)
+
+    # ---- 2. Overlay descriptor rectangles on image ----
+    plt.imshow(im, cmap='gray')
+    for x, y in corners:
+        rect = plt.Rectangle(
+            (x - desc_rad, y - desc_rad),
+            2*desc_rad + 1,
+            2*desc_rad + 1,
+            edgecolor='magenta',
+            facecolor='none',
+            linewidth=1
+        )
+        plt.gca().add_patch(rect)
+    plt.title("Descriptor sampling locations")
     plt.show()
+
+if __name__ == "__main__":
+    main()
