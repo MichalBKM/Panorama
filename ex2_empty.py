@@ -78,6 +78,7 @@ def feature_descriptor(im, points, desc_rad=3):
 
     return np.array(patches)
 
+
 def find_features(im):
     """
     Detects and extracts feature points from a specific pyramid level.
@@ -88,6 +89,7 @@ def find_features(im):
             2) A feature descriptor array with shape (N,K,K)
     """
     pass
+
 
 def match_features(desc1, desc2, min_score):
     """
