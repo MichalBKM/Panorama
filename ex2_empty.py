@@ -13,7 +13,7 @@ from utils import *
 # 1. harris_corner_detector - DONE, Michal              #
 # 2. feature_descriptor - DONE, Michal                  #
 # 3. find_features - DONE, Michal                       #
-# 4. match_features                                     #
+# 4. match_features - DONE, Michal                      #
 # 5. apply_homography                                   #
 # 6. ransac_homography                                  #
 # 7. display_matches                                    #         
@@ -120,17 +120,45 @@ def find_features(im):
     return [points_level_0, desc]
 
 
+# DONE - Need to check for correctness
 def match_features(desc1, desc2, min_score):
     """
     Return indices of matching descriptors.
-    :param desc1: A feature descriptor array with shape (N1,K,K).
-    :param desc2: A feature descriptor array with shape (N2,K,K).
+    :param desc1: A feature descriptor array with shape (N1,K,K). K = 7
+    :param desc2: A feature descriptor array with shape (N2,K,K). K = 7
     :param min_score: Minimal match score.
     :return: A list containing:
                 1) An array with shape (M,) and dtype int of matching indices in desc1.
                 2) An array with shape (M,) and dtype int of matching indices in desc2.
     """
-    pass
+    # Flatten each descriptor to a 1D array - now we have shape (N1, K*K) and (N2, K*K)
+    desc1_flat = desc1.reshape(desc1.shape[0], -1)
+    desc2_flat = desc2.reshape(desc2.shape[0], -1)
+
+    # Compute the score matrix using dot product
+    score_mat = np.dot(desc1_flat, desc2_flat.T)
+    
+    # Get indices of 2 largest values per row
+    top2_in_desc2 = np.argsort(score_mat, axis=1)[:, -2:]
+    
+    # Get indices of 2 largest values per column
+    top2_in_desc1 = np.argsort(score_mat, axis=0)[-2:, :]  
+    
+    # Find matches that satisfy all three conditions
+    matches_idx1 = []
+    matches_idx2 = []
+    for i in range(desc1.shape[0]):
+        for j in range(desc2.shape[0]):
+            curr_score = score_mat[i, j]
+
+            if curr_score >= min_score and \
+               j in top2_in_desc2[i] and \
+                i in top2_in_desc1[:, j]:
+                 matches_idx1.append(i)
+                 matches_idx2.append(j)
+
+    return [np.array(matches_idx1, dtype=int), np.array(matches_idx2, dtype=int)]
+
 
 def apply_homography(pos1, H12):
     """
