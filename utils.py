@@ -10,6 +10,21 @@ import matplotlib.pyplot as plt
 GRAYSCALE_MAX = 255
 GRAY_REPRESENTATION = 1
 
+#####################################################
+# Utils Functions: already implemented for us       #
+# 1. read_image                                     #
+# 2. build_gaussian_pyramid                         # 
+# 3. reduce                                         #
+# 4. blur_spatial                                   #
+# 5. non_maximum_suppression                        #
+# 6. spread_out_corners                             #
+# 7. visualize_points                               #
+# 8. dominant_orientation                           #
+# 9. estimate_rigid_transform                       #
+#10. filter_homographies_with_translation           #
+# 11. normalize                                     #
+#####################################################
+
 
 def read_image(filename, representation):
     """

@@ -12,7 +12,7 @@ from utils import *
 # PART 1: REGISTRATION                                  #
 # 1. harris_corner_detector - DONE, Michal              #
 # 2. feature_descriptor - DONE, Michal                  #
-# 3. find_features                                      #
+# 3. find_features - DONE, Michal                       #
 # 4. match_features                                     #
 # 5. apply_homography                                   #
 # 6. ransac_homography                                  #
@@ -99,6 +99,7 @@ def feature_descriptor(im, points, desc_rad=3):
     return np.array(patches)
 
 
+# DONE - Need to check for correctness
 def find_features(im):
     """
     Detects and extracts feature points from a specific pyramid level.
@@ -108,7 +109,15 @@ def find_features(im):
                 These coordinates are provided at the original image level.
             2) A feature descriptor array with shape (N,K,K)
     """
-    pass
+    # Build Gaussian pyramid with 3 levels: 0 (original image), 1, 2
+    pyr = build_gaussian_pyramid(im, max_levels=3, filter_size=3) #what filter size?
+    points_level_0 = spread_out_corners(im, m = 7,n = 7, radius = 12, harris_corner_detector=harris_corner_detector)
+    # Convert the location of the points to level 3
+    points_level_2 = points_level_0 // 4
+    # Extract feature descriptors at level 3
+    desc = feature_descriptor(pyr[2], points_level_2, desc_rad=3)
+    # Return points at level 1 and descriptors
+    return [points_level_0, desc]
 
 
 def match_features(desc1, desc2, min_score):
