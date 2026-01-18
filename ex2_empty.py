@@ -483,7 +483,7 @@ def generate_panoramic_images(data_dir, file_prefix, num_images, out_dir, number
     for i, panorama in enumerate(panoramas):
         plt.imsave('%s/panorama%02d.png' % (out_dir, i + 1), panorama)
 
-"""
+
 if __name__ == "__main__":
     import ffmpeg
     video_name = "mt_cook.mp4"
@@ -529,8 +529,8 @@ if __name__ == "__main__":
     generate_panoramic_images(f"dump/{video_name_base}/", video_name_base,
                               num_images=num_images, out_dir=f"out/{video_name_base}", number_of_panoramas=3)
 
-"""
 
+"""
 if __name__ == "__main__":
     import ffmpeg
     video_name = "mt_cook.mp4"
@@ -574,3 +574,4 @@ if __name__ == "__main__":
     generate_panoramic_images(f"{temp_dir}/", video_name_base, 
                               num_images=END-START, out_dir=f"out/{video_name_base}_test", 
                               number_of_panoramas=3)
+"""
