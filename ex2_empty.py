@@ -14,7 +14,7 @@ from utils import *
 # 2. feature_descriptor - DONE, Michal                  #
 # 3. find_features - DONE, Michal                       #
 # 4. match_features - DONE, Michal                      #
-# 5. apply_homography                                   #
+# 5. apply_homography - DONE                            #
 # 6. ransac_homography                                  #
 # 7. display_matches                                    #         
 #                                                       #
@@ -195,7 +195,45 @@ def ransac_homography(points1, points2, num_iter, inlier_tol, translation_only=F
                 2) An Array with shape (S,) where S is the number of inliers,
                     containing the indices in pos1/pos2 of the maximal set of inlier matches found.
     """
-    pass
+    max_inliers = np.array([], dtype=int)
+    for _ in range(num_iter):
+
+        #Step1. Sample 2 point correspondences from the supplies N matches
+        idx_i, idx_j = np.random.choice(len(points1), 2, replace=False)
+
+        p1_i = points1[idx_i]
+        p2_i = points2[idx_i]
+
+        p1_j = points1[idx_j]
+        p2_j = points2[idx_j]
+
+        sample_p1 = np.array([p1_i, p1_j])
+        sample_p2 = np.array([p2_i, p2_j])
+
+        #Step2. Compute the homography
+        H12 = estimate_rigid_transform(sample_p1, sample_p2, translation_only)
+
+        #Step3.1  Apply H12 over all P1 points
+        predicted_p2 = apply_homography(points1, H12)
+
+        #Step3.2 Calculate the squared Euclidean distance between P1 and P2
+        distances = np.sum((predicted_p2 - points2)**2, axis=1)
+
+        #Step3.3 Mark points with distance < inlier_tol as inliers
+        inliers = np.where(distances < inlier_tol)[0]
+
+        if len(inliers) > len(max_inliers):
+            max_inliers = inliers
+        
+        
+    #4. recompute the homography using all the inliers
+    if len(max_inliers) == 0:
+        final_H12 = np.eye(3)
+    else:
+        final_H12 = estimate_rigid_transform(points1[max_inliers], 
+                                         points2[max_inliers], 
+                                         translation_only)
+    return [final_H12, max_inliers]
 
 def display_matches(im1, im2, points1, points2, inliers):
     """
