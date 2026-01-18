@@ -145,19 +145,21 @@ def match_features(desc1, desc2, min_score):
     top2_in_desc1 = np.argsort(score_mat, axis=0)[-2:, :]  
     
     # Find matches that satisfy all three conditions
-    matches_idx1 = []
-    matches_idx2 = []
-    for i in range(desc1.shape[0]):
-        for j in range(desc2.shape[0]):
-            curr_score = score_mat[i, j]
+    score_mask = (score_mat >= min_score)
 
-            if curr_score >= min_score and \
-               j in top2_in_desc2[i] and \
-                i in top2_in_desc1[:, j]:
-                 matches_idx1.append(i)
-                 matches_idx2.append(j)
+    top2_row_mask = np.zeros_like(score_mat, dtype=bool)
+    for i in range(top2_in_desc2.shape[0]):
+        top2_row_mask[i, top2_in_desc2[i]] = True
 
-    return [np.array(matches_idx1, dtype=int), np.array(matches_idx2, dtype=int)]
+    top2_col_mask = np.zeros_like(score_mat, dtype=bool)
+    for j in range(top2_in_desc1.shape[1]):
+        top2_col_mask[top2_in_desc1[:, j], j] = True
+
+    valid_matches = score_mask & top2_row_mask & top2_col_mask
+
+    matches_idx1 , matches_idx2 = np.where(valid_matches)
+
+    return [matches_idx1.astype(int), matches_idx2.astype(int)]
 
 
 def apply_homography(points, homographic_matrix):
@@ -284,7 +286,7 @@ def accumulate_homographies(H_successive, m):
     :return: A list of M 3x3 homography matrices,
       mwhere H2m[i] transforms points from coordinate syste i to coordinate system m
     """
-    M = H_successive.shape[0] + 1 # Number of frames
+    M = len(H_successive) + 1 # Number of frames
     H2m = [np.eye(3) for _ in range(M)] # Initialize list of homographies
 
     # Compute homographies from each frame to the m-th frame
@@ -293,7 +295,7 @@ def accumulate_homographies(H_successive, m):
         H2m[i] = np.dot(H2m[i + 1], np.linalg.inv(H_successive[i]))
     # from m+1 up to M-1
     for i in range(m + 1, M):
-        H2m[i] = np.dot(H_successive[i - 1], H2m[i - 1])
+        H2m[i] = np.dot(H2m[i - 1], H_successive[i - 1])
 
     # Normalize homographies
     for i in range(M):
