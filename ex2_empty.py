@@ -312,7 +312,18 @@ def compute_bounding_box(homography, w, h):
     :return: 2x2 array, where the first row is [x,y] of the top left corner,
      and the second row is the [x,y] of the bottom right corner
     """
-    pass
+    # Step 1. The 4 corners of the original image (x, y)
+    corners = np.array([[0, 0], [w, 0], [0, h], [w, h]])
+
+    # Step 2. Transform the corners using apply_homography
+    transformed_corners = apply_homography(corners, homography)
+
+    # Step3. find the min and max x,y coordinates
+    min_x, min_y = np.min(transformed_corners, axis=0)
+    max_x, max_y = np.max(transformed_corners, axis=0)
+
+    # Step 4. Return the result in a 2x2 array
+    return np.array([[min_x, min_y], [max_x, max_y]])
 
 def warp_channel(image, homography):
     """
