@@ -244,7 +244,33 @@ def display_matches(im1, im2, points1, points2, inliers):
     :param points2: An aray shape (N,2), containing N rows of [x,y] coordinates of matched points in im2.
     :param inliers: An array with shape (S,) of inlier matches.
     """
-    pass
+    # 1. Concatenate images horizontally
+    combined_im = np.hstack((im1, im2))
+    plt.imshow(combined_im, cmap='gray')
+    
+    # Width of the first image to offset points in the second image
+    width_offset = im1.shape[1]
+    
+    # 2. Iterate through all matches to draw lines
+    for i in range(len(points1)):
+        x1, y1 = points1[i]
+        x2, y2 = points2[i]
+        
+        # Offset x2 for the second image's position in the combined view
+        x2_offset = x2 + width_offset
+        
+        # Determine color: Blue for inliers, Yellow for outliers
+        color = 'b' if i in inliers else 'y'
+        
+        # Draw the line between matches
+        plt.plot([x1, x2_offset], [y1, y2], color=color, lw=0.5)
+        
+        # Draw points as red dots
+        plt.plot(x1, y1, 'ro', mfc='none', markersize=3)
+        plt.plot(x2_offset, y2, 'ro', mfc='none', markersize=3)
+    
+    plt.title("Matches: Blue = Inliers, Yellow = Outliers")
+    plt.show()
 
 
 def accumulate_homographies(H_successive, m):
@@ -438,10 +464,10 @@ if __name__ == "__main__":
     # Display matches with inliers and outliers
     display_matches(image1, image2, matched_points1, matched_points2, inliers)
 
+    """
     # Generate panoramic images
     print("\nGenerating panoramic images...")
     generate_panoramic_images(f"dump/{video_name_base}/", video_name_base,
                               num_images=num_images, out_dir=f"out/{video_name_base}", number_of_panoramas=3)
-
-
+    """
 
