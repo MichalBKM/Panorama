@@ -160,14 +160,27 @@ def match_features(desc1, desc2, min_score):
     return [np.array(matches_idx1, dtype=int), np.array(matches_idx2, dtype=int)]
 
 
-def apply_homography(pos1, H12):
+def apply_homography(points, homographic_matrix):
     """
     Apply homography to inhomogenous points.
     :param pos1: An array with shape (N,2) of [x,y] point coordinates.
     :param H12: A 3x3 homography matrix.
     :return: An array with the same shape as pos1 with [x,y] point coordinates obtained from transforming pos1 using H12.
     """
-    pass
+
+    #Step1. Convert to homogenous coordinates
+    n = points.shape[0]
+    ones = np.ones(n, 1)
+    points_padded = np.hstack((points, ones))
+
+    #Step2. Linear Transformation: Apply the homograpjy matrix
+    transformed_points = np.dot(homographic_matrix, points_padded.T)
+
+    #Step3. Convert back to inhomogenous coordinates
+    w = transformed_points[:, 2:3]
+    normalized_points = transformed_points[:, :2] / w
+
+    return normalized_points
 
 def ransac_homography(points1, points2, num_iter, inlier_tol, translation_only=False):
     """
