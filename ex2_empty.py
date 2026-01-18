@@ -292,10 +292,10 @@ def accumulate_homographies(H_successive, m):
     # Compute homographies from each frame to the m-th frame
     # from m-1 down to 0
     for i in range(m - 1, -1, -1): 
-        H2m[i] = np.dot(H2m[i + 1], np.linalg.inv(H_successive[i]))
+        H2m[i] = np.dot(H2m[i + 1], H_successive[i])
     # from m+1 up to M-1
     for i in range(m + 1, M):
-        H2m[i] = np.dot(H2m[i - 1], H_successive[i - 1])
+        H2m[i] = np.dot(H2m[i - 1], np.linalg.inv(H_successive[i - 1]))
 
     # Normalize homographies
     for i in range(M):
@@ -341,8 +341,8 @@ def warp_channel(image, homography):
     max_x, max_y = bounding_box[1]
 
     #Step 2. create grid
-    x_range = np.arange(np.floor(min_x), np.ceil(max_x))
-    y_range = np.arange(np.floor(min_y), np.ceil(max_y))
+    x_range = np.arange(int(np.floor(min_x)), int(np.floor(max_x))+1)
+    y_range = np.arange(int(np.floor(min_y)), int(np.floor(max_y))+1)
     x_grid, y_grid = np.meshgrid(x_range, y_range)
 
     #Step 3. Flatten the grid to apply homography
@@ -351,7 +351,9 @@ def warp_channel(image, homography):
 
     #Step 4. sample pixels from the original image
     sample_coords = [back_warped_points[:, 1], back_warped_points[:, 0]]
-    warped_pixels = map_coordinates(image, sample_coords, order=1, prefilter=False) 
+    warped_pixels = map_coordinates(image, sample_coords, order=1, prefilter=False, mode='constant', cval=0) 
+    
+    warped_pixels = np.clip(warped_pixels, 0, 1)
 
     return warped_pixels.reshape(x_grid.shape)
 
@@ -481,7 +483,7 @@ def generate_panoramic_images(data_dir, file_prefix, num_images, out_dir, number
     for i, panorama in enumerate(panoramas):
         plt.imsave('%s/panorama%02d.png' % (out_dir, i + 1), panorama)
 
-
+"""
 if __name__ == "__main__":
     import ffmpeg
     video_name = "mt_cook.mp4"
@@ -527,4 +529,48 @@ if __name__ == "__main__":
     generate_panoramic_images(f"dump/{video_name_base}/", video_name_base,
                               num_images=num_images, out_dir=f"out/{video_name_base}", number_of_panoramas=3)
 
+"""
 
+if __name__ == "__main__":
+    import ffmpeg
+    video_name = "mt_cook.mp4"
+    video_name_base = video_name.split('.')[0]
+    os.makedirs(f"dump/{video_name_base}", exist_ok=True)
+    ffmpeg.input(f"videos/{video_name}").output(f"dump/{video_name_base}/{video_name_base}%03d.jpg").run()
+    num_images = len(os.listdir(f"dump/{video_name_base}"))
+    print(f"Generated {num_images} images")
+
+    # FAST TESTING: Use only 30 frames
+    START = 200
+    END = 230
+    
+    print("\n=== Testing with frames", START, "to", END, "===")
+    image1 = read_image(f"dump/{video_name_base}/{video_name_base}{START:03d}.jpg", 1)
+    image2 = read_image(f"dump/{video_name_base}/{video_name_base}{START+10:03d}.jpg", 1)
+
+    points1, desc1 = find_features(image1)
+    points2, desc2 = find_features(image2)
+    print(f"Found {len(points1)} and {len(points2)} feature points")
+    
+    ind1, ind2 = match_features(desc1, desc2, 0.6)
+    matched_points1 = points1[ind1]
+    matched_points2 = points2[ind2]
+    print(f"Found {len(ind1)} matches")
+
+    H12, inliers = ransac_homography(matched_points1, matched_points2, 100, 6, translation_only=False)
+    print(f"Found {len(inliers)} inliers")
+    display_matches(image1, image2, matched_points1, matched_points2, inliers)
+
+    # Generate panorama with only 30 frames
+    print("\nGenerating panorama...")
+    import shutil
+    temp_dir = f"dump/{video_name_base}_test"
+    os.makedirs(temp_dir, exist_ok=True)
+    
+    for i in range(START, END):
+        shutil.copy(f"dump/{video_name_base}/{video_name_base}{i:03d}.jpg", 
+                    f"{temp_dir}/{video_name_base}{i-START+1:03d}.jpg")
+    
+    generate_panoramic_images(f"{temp_dir}/", video_name_base, 
+                              num_images=END-START, out_dir=f"out/{video_name_base}_test", 
+                              number_of_panoramas=3)
