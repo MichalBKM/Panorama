@@ -170,11 +170,11 @@ def apply_homography(points, homographic_matrix):
 
     #Step1. Convert to homogenous coordinates
     n = points.shape[0]
-    ones = np.ones(n, 1)
+    ones = np.ones((n, 1))
     points_padded = np.hstack((points, ones))
 
     #Step2. Linear Transformation: Apply the homograpjy matrix
-    transformed_points = np.dot(homographic_matrix, points_padded.T)
+    transformed_points = (np.dot(homographic_matrix, points_padded.T)).T
 
     #Step3. Convert back to inhomogenous coordinates
     w = transformed_points[:, 2:3]
