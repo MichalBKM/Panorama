@@ -332,7 +332,26 @@ def warp_channel(image, homography):
     :param homography: homograhpy.
     :return: A 2d warped image.
     """
-    pass
+    #Step 1. Compute the bound box to define the output image limit
+    h, w = image.shape
+    bounding_box = compute_bounding_box(homography, w, h)
+    min_x, min_y = bounding_box[0]
+    max_x, max_y = bounding_box[1]
+
+    #Step 2. create grid
+    x_range = np.arange(np.floor(min_x), np.ceil(max_x))
+    y_range = np.arange(np.floor(min_y), np.ceil(max_y))
+    x_grid, y_grid = np.meshgrid(x_range, y_range)
+
+    #Step 3. Flatten the grid to apply homography
+    points_to_warp = np.vstack((x_grid.ravel(), y_grid.ravel())).T
+    back_warped_points = apply_homography(points_to_warp, np.linalg.inv(homography))
+
+    #Step 4. sample pixels from the original image
+    sample_coords = [back_warped_points[:, 1], back_warped_points[:, 0]]
+    warped_pixels = map_coordinates(image, sample_coords, order=1, prefilter=False) 
+
+    return warped_pixels.reshape(x_grid.shape)
 
 def warp_image(image, homography):
     """
@@ -341,7 +360,17 @@ def warp_image(image, homography):
     :param homography: homograhpy.
     :return: A warped image.
     """
-    pass
+    # Create a list to store the warped channels
+    warped_channels = []
+    
+    # Iterate over the 3 color channels (R, G, B)
+    for i in range(3):
+        channel = image[:, :, i]
+        warped_channel = warp_channel(channel, homography)
+        warped_channels.append(warped_channel)
+    
+    # Stack the channels back together along the third dimension
+    return np.stack(warped_channels, axis=2)
 
 
 
@@ -491,10 +520,9 @@ if __name__ == "__main__":
     # Display matches with inliers and outliers
     display_matches(image1, image2, matched_points1, matched_points2, inliers)
 
-    """
     # Generate panoramic images
     print("\nGenerating panoramic images...")
     generate_panoramic_images(f"dump/{video_name_base}/", video_name_base,
                               num_images=num_images, out_dir=f"out/{video_name_base}", number_of_panoramas=3)
-    """
+
 
