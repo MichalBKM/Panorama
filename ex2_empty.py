@@ -15,8 +15,8 @@ from utils import *
 # 3. find_features - DONE, Michal                       #
 # 4. match_features - DONE, Michal                      #
 # 5. apply_homography - DONE                            #
-# 6. ransac_homography                                  #
-# 7. display_matches                                    #         
+# 6. ransac_homography - DONE                           #
+# 7. display_matches   - DONE                           #         
 #                                                       #
 # PART 2: STITCHING                                     #
 # 8. accumulate_homographies                            #
