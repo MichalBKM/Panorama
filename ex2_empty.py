@@ -15,8 +15,8 @@ from utils import *
 # 3. find_features - DONE, Michal                       #
 # 4. match_features - DONE, Michal                      #
 # 5. apply_homography - DONE                            #
-# 6. ransac_homography - DONE                           #
-# 7. display_matches   - DONE                           #         
+# 6. ransac_homography                                  #
+# 7. display_matches                                    #         
 #                                                       #
 # PART 2: STITCHING                                     #
 # 8. accumulate_homographies                            #
@@ -282,9 +282,25 @@ def accumulate_homographies(H_successive, m):
     :param m: Index of the coordinate system towards which we would like to
       accumulate the given homographies.
     :return: A list of M 3x3 homography matrices,
-      where H2m[i] transforms points from coordinate system i to coordinate system m
+      mwhere H2m[i] transforms points from coordinate syste i to coordinate system m
     """
-    pass
+    M = H_successive.shape[0] + 1 # Number of frames
+    H2m = [np.eye(3) for _ in range(M)] # Initialize list of homographies
+
+    # Compute homographies from each frame to the m-th frame
+    # from m-1 down to 0
+    for i in range(m - 1, -1, -1): 
+        H2m[i] = np.dot(H2m[i + 1], np.linalg.inv(H_successive[i]))
+    # from m+1 up to M-1
+    for i in range(m + 1, M):
+        H2m[i] = np.dot(H_successive[i - 1], H2m[i - 1])
+
+    # Normalize homographies
+    for i in range(M):
+        H2m[i] = H2m[i] / H2m[i][2, 2]
+    
+    # Return the list of homographies
+    return H2m
 
 
 def compute_bounding_box(homography, w, h):
