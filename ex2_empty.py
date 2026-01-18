@@ -359,7 +359,7 @@ def generate_panoramic_images(data_dir, file_prefix, num_images, out_dir, number
     for i, panorama in enumerate(panoramas):
         plt.imsave('%s/panorama%02d.png' % (out_dir, i + 1), panorama)
 
-"""
+
 if __name__ == "__main__":
     import ffmpeg
     video_name = "mt_cook.mp4"
@@ -404,42 +404,6 @@ if __name__ == "__main__":
     print("\nGenerating panoramic images...")
     generate_panoramic_images(f"dump/{video_name_base}/", video_name_base,
                               num_images=num_images, out_dir=f"out/{video_name_base}", number_of_panoramas=3)
-"""
 
-# Check harris corner detector and feature descriptor
-def main():
-    # ---- Load grayscale image ----
-    im = read_image('photos/color.jpg', GRAY_REPRESENTATION)
 
-    # ---- Detect corners ----
-    corners = spread_out_corners(
-        im,
-        m=4,
-        n=4,
-        radius=8,
-        harris_corner_detector=harris_corner_detector
-    )
 
-    print(f"Detected {len(corners)} corners")
-
-    # ---- Compute descriptors ----
-    desc_rad = 3
-    descriptors = feature_descriptor(im, corners, desc_rad)
-
-    # ---- 2. Overlay descriptor rectangles on image ----
-    plt.imshow(im, cmap='gray')
-    for x, y in corners:
-        rect = plt.Rectangle(
-            (x - desc_rad, y - desc_rad),
-            2*desc_rad + 1,
-            2*desc_rad + 1,
-            edgecolor='magenta',
-            facecolor='none',
-            linewidth=1
-        )
-        plt.gca().add_patch(rect)
-    plt.title("Descriptor sampling locations")
-    plt.show()
-
-if __name__ == "__main__":
-    main()
