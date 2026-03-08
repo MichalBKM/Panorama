@@ -215,7 +215,4 @@ def filter_homographies_with_translation(homographies, minimum_right_translation
             last = homographies[i][0, -1]
     return np.array(translation_over_thresh).astype(np.int32)
 
-def normalize(vector):
-    v = vector - np.mean(vector)
-    norm = np.linalg.norm(v)
-    return v / norm if norm != 0 else v
+

@@ -6,6 +6,10 @@ from scipy.ndimage import map_coordinates
 
 from utils import *
 
+def normalize(vector):
+    v = vector - np.mean(vector)
+    norm = np.linalg.norm(v)
+    return v / norm if norm != 0 else v
 
 def harris_corner_detector(im):
     """
