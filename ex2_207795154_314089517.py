@@ -293,7 +293,7 @@ def compute_bounding_box(homography, w, h):
      and the second row is the [x,y] of the bottom right corner
     """
     # The 4 corners of the original image (x, y)
-    corners = np.array([[0, 0], [w-1, 0], [0, h-1], [w-1, h]])
+    corners = np.array([[0, 0], [w-1, 0], [0, h-1], [w-1, h-1]])
 
     # Transform the corners using apply_homography
     transformed_corners = apply_homography(corners, homography)
