@@ -107,6 +107,9 @@ def match_features(desc1, desc2, min_score):
                 1) An array with shape (M,) and dtype int of matching indices in desc1.
                 2) An array with shape (M,) and dtype int of matching indices in desc2.
     """
+    if desc1.shape[0] == 0 or desc2.shape[0] == 0:
+        return np.array([], dtype=int), np.array([], dtype=int)
+    
     # Flatten each descriptor to a 1D array - now we have shape (N1, K*K) and (N2, K*K)
     desc1_flat = desc1.reshape(desc1.shape[0], -1)
     desc2_flat = desc2.reshape(desc2.shape[0], -1)
@@ -290,7 +293,7 @@ def compute_bounding_box(homography, w, h):
      and the second row is the [x,y] of the bottom right corner
     """
     # The 4 corners of the original image (x, y)
-    corners = np.array([[0, 0], [w, 0], [0, h], [w, h]])
+    corners = np.array([[0, 0], [w-1, 0], [0, h-1], [w-1, h]])
 
     # Transform the corners using apply_homography
     transformed_corners = apply_homography(corners, homography)
@@ -317,8 +320,8 @@ def warp_channel(image, homography):
     max_x, max_y = bounding_box[1]
 
     # Create grid
-    x_range = np.arange(int(np.floor(min_x)), int(np.ceil(max_x)))
-    y_range = np.arange(int(np.floor(min_y)), int(np.ceil(max_y)))
+    x_range = np.arange(int(np.floor(min_x)), int(np.ceil(max_x))+1)
+    y_range = np.arange(int(np.floor(min_y)), int(np.ceil(max_y))+1)
     x_grid, y_grid = np.meshgrid(x_range, y_range)
 
     # Flatten the grid to apply homography
@@ -462,7 +465,7 @@ def generate_panoramic_images(data_dir, file_prefix, num_images, out_dir, number
 
 if __name__ == "__main__":
     import ffmpeg
-    video_name = "mt_cook.mp4"
+    video_name = "peyto_lake.mp4"
     video_name_base = video_name.split('.')[0]
     os.makedirs(f"dump/{video_name_base}", exist_ok=True)
     ffmpeg.input(f"videos/{video_name}").output(f"dump/{video_name_base}/{video_name_base}%03d.jpg").run()
