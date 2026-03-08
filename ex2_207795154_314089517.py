@@ -58,6 +58,9 @@ def feature_descriptor(im, points, desc_rad=3):
     patch_size = 2 * desc_rad + 1
     patches = []
 
+    if len(points) == 0:
+        return np.empty((0, patch_size, patch_size))
+
     for point in points:
         # (x,y) image coordinates
         x, y = point
@@ -175,7 +178,13 @@ def ransac_homography(points1, points2, num_iter, inlier_tol, translation_only=F
                 2) An Array with shape (S,) where S is the number of inliers,
                     containing the indices in pos1/pos2 of the maximal set of inlier matches found.
     """
+    
     max_inliers = np.array([], dtype=int)
+
+    if len(points1) < 2:  # Add this guard
+        final_H12 = estimate_rigid_transform(points1, points2, translation_only) if len(points1) == 1 else np.eye(3)
+        return [final_H12, max_inliers]
+    
     for _ in range(num_iter):
 
         # Sample 2 point correspondences from the supplies N matches
@@ -299,11 +308,11 @@ def compute_bounding_box(homography, w, h):
     transformed_corners = apply_homography(corners, homography)
 
     # Find the min and max x,y coordinates
-    min_x, min_y = np.min(transformed_corners, axis=0)
-    max_x, max_y = np.max(transformed_corners, axis=0)
+    min_x, min_y = np.floor(np.min(transformed_corners, axis=0)).astype(int)
+    max_x, max_y = np.ceil(np.max(transformed_corners, axis=0)).astype(int)
 
     # Return the result in a 2x2 array
-    return np.array([[min_x, min_y], [max_x, max_y]])
+    return np.array([[min_x, min_y], [max_x, max_y]], dtype=np.float64)
 
 
 def warp_channel(image, homography):
@@ -316,12 +325,12 @@ def warp_channel(image, homography):
     # Compute the bound box to define the output image limit
     h, w = image.shape
     bounding_box = compute_bounding_box(homography, w, h)
-    min_x, min_y = bounding_box[0]
-    max_x, max_y = bounding_box[1]
+    min_x, min_y = bounding_box[0].astype(int)
+    max_x, max_y = bounding_box[1].astype(int)
 
     # Create grid
-    x_range = np.arange(int(np.floor(min_x)), int(np.ceil(max_x))+1)
-    y_range = np.arange(int(np.floor(min_y)), int(np.ceil(max_y))+1)
+    x_range = np.arange(min_x, max_x +1)
+    y_range = np.arange(min_y, max_y + 1)
     x_grid, y_grid = np.meshgrid(x_range, y_range)
 
     # Flatten the grid to apply homography
@@ -334,7 +343,7 @@ def warp_channel(image, homography):
     
     warped_pixels = np.clip(warped_pixels, 0, 1)
 
-    return warped_pixels.reshape(x_grid.shape)
+    return np.clip(warped_pixels.reshape(x_grid.shape), 0, 1)
 
 
 def warp_image(image, homography):
@@ -465,7 +474,7 @@ def generate_panoramic_images(data_dir, file_prefix, num_images, out_dir, number
 
 if __name__ == "__main__":
     import ffmpeg
-    video_name = "peyto_lake.mp4"
+    video_name = "mt_cook.mp4"
     video_name_base = video_name.split('.')[0]
     os.makedirs(f"dump/{video_name_base}", exist_ok=True)
     ffmpeg.input(f"videos/{video_name}").output(f"dump/{video_name_base}/{video_name_base}%03d.jpg").run()
