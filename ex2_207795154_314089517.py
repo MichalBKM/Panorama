@@ -181,7 +181,7 @@ def ransac_homography(points1, points2, num_iter, inlier_tol, translation_only=F
     
     max_inliers = np.array([], dtype=int)
 
-    if len(points1) < 2:  # Add this guard
+    if len(points1) < 2:
         final_H12 = estimate_rigid_transform(points1, points2, translation_only) if len(points1) == 1 else np.eye(3)
         return [final_H12, max_inliers]
     
